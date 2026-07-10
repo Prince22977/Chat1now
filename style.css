@@ -1,0 +1,96 @@
+/* Resetting default browser spacing*/
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Centering the login card in any screen size */
+body {
+    background: linear-gradient(135deg, #74ebd5, #9face6);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+/* The Mobile-First Card Layout */
+.login-container {
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    width: 100%;
+    max-width: 400px; /* Prevents it from getting too wide on a pc */
+    text-align: center;
+}
+
+h2 {
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.subtitle {
+    color: #777;
+    font-size: 14px;
+    margin-bottom: 25px;
+}
+
+/* Formatting inputs for big, east mobile-tapping */
+.input-group {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    display: block;
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px 15px; /* Generous padding for fingers on screens */
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px; /* Prevents iOS from auto-zooming on focus */
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.input-group input:focus {
+    border-color: #74ebd5;
+}
+
+/* The Big Friendly Login Button */
+.login-btn {
+    width: 100%;
+    padding: 12px;
+    background: #6c5ce7;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 10px;
+}
+.login-btn:hover {
+    background: #5a4cc4;
+}
+.login-footer {
+    margin-top: 20px;
+    font-size: 14px;
+    color: #666;
+}
+
+.login-footer a {
+    color: #6c5ce7;
+    text-decoration: none;
+    font-weight: 600;
+}

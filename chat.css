@@ -1,0 +1,104 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* Forces the app to perfectly fill the phone screen without scrolling the whole page */
+body {
+    background-color: #f0f2f5;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+}
+
+/* The chat containing our entire chat application layout */
+.chat-wrapper {
+    width: 100%;
+    max-width: 500px; /* Looks like phone frame on PC, but matches phone width on mobile */
+    height: 100%;
+    display: flex;
+    flex-direction: column; /* Stack header, messages and input veritcally like blocks */
+    background: #ffffff;
+}
+
+/* 1. HEADER STYLING */
+.chat-header {
+    background: #6c5ce7;
+    color: white;
+    padding: 15px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.chat-header h3 { font-size: 18px; }
+.chat-header p { font-size: 12px; opacity: 0.8; }
+
+/* 2.MESSAGE CONTAINER STYLING */
+.message-container {
+    flex: 1; /* MAGIC LINE: Tells this zone to swallow up all remaining screen space */
+    overflow-y: auto; /* MAGIC LINE: If texts overflow the screen, add a scrollbar only here */
+    padding: 20px;
+    background: #e5ddd5; /* Classic chat backgroung color */
+    display: flex;
+    flex-direction: column;
+    gap: 12px; /* Puts a nice gap between chat bubbles */
+}
+
+/* chat Bubbles Base Layout */ 
+.message {
+    max-width: 75%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 15px;
+    line-height: 1.4;
+}
+
+/* Friend's messages (Incoming) - Left Aligned */
+.incoming {
+    background: #ffffff;
+    align-self: flex-start;
+    border-top-left-radius: 0; /* Makes the bubble look like a speech bubble */
+}
+
+.sender-name {
+    display: block;
+    font-size: 11px;
+    font-weight: bold;
+    color: #6c5ce7;
+    margin-bottom: 3px;
+}
+
+/* Your Messages (Outgoing) - Right aligned */
+.outgoing {
+    background: #d9fdd3; /* Light green background for your messages just like whatsapp */
+    align-self: flex-end;
+    border-top-right-radius: 2px;
+}
+
+/* 3. INPUT BAR STYLING */
+.chat-input-area {
+    padding: 12px;
+    background: #f0f2f5;
+}
+#chat-form {
+    display: flex;
+    gap: 10px;
+}
+#msg-input {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 20px; /* Rounded input bar */
+    outline: none;
+    font-size: 16px;
+}
+.send-btn {
+    background: #6c5ce7;
+    color: white;
+    border: none;
+    padding: 0 20px;
+    border-radius: 20px;
+    font-weight: bold;
+    cursor: pointer;
+}
