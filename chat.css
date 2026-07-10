@@ -102,3 +102,23 @@ body {
     font-weight: bold;
     cursor: pointer;
 }
+
+/* Message Timestamp Styling */
+.message-time {
+    font-size: 0.7rem;
+    display: block;
+    margin-top: 3px;
+    opacity: 0.4;
+}
+
+/* Align yout own timestamp to the right side of the bubbles */
+.outgoing .message-time {
+    text-align: right;
+    color: rgba(255,255,255,0.8); /* Anyone can read it also on dark background */
+}
+
+/* Align friend's timestamps to the left side */
+.incoming .message-time {
+    text-align: left;
+    color: #666;
+}
