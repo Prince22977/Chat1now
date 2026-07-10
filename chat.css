@@ -108,13 +108,13 @@ body {
     font-size: 0.7rem;
     display: block;
     margin-top: 3px;
-    opacity: 0.4;
+    opacity: 0.6;
 }
 
 /* Align yout own timestamp to the right side of the bubbles */
 .outgoing .message-time {
     text-align: right;
-    color: rgba(255,255,255,0.8); /* Anyone can read it also on dark background */
+    color: #666; 
 }
 
 /* Align friend's timestamps to the left side */
