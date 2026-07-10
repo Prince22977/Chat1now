@@ -50,34 +50,40 @@ chatForm.addEventListener('submit', async (event) => {
 });
 
 // 7. RECEIVING MESSAGES: Listen to the cloud database in real-time!
-// This magic function triggers automatically whenever anyone sends a message.
 const q = query(messagesCollection, orderBy("timestamp", "asc"));
 onSnapshot(q, (snapshot) => {
-    messageContainer.innerHTML = ""; // Clear the screen before rendering updated list
+    messageContainer.innerHTML = ""; 
 
     snapshot.forEach((doc) => {
         const data = doc.data();
-        
-        // Create a new div block for the message bubble
         const msgDiv = document.createElement('div');
         
-        // If the sender matches your nickname, style it as "outgoing" (right side)
-        // Otherwise, style it as "incoming" (left side)
+        // --- NEW TIME FORMATTING LOGIC ---
+        // Converts the long database number into a clean "11:35 PM" format
+        let timeString = "";
+        if (data.timestamp) {
+            const date = new Date(data.timestamp);
+            timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+        // ---------------------------------
+
         if (data.sender === currentUsername) {
             msgDiv.className = "message outgoing";
-            msgDiv.innerHTML = `<p class="message-text">${data.text}</p>`;
+            msgDiv.innerHTML = `
+                <p class="message-text">${data.text}</p>
+                <span class="message-time">${timeString}</span>
+            `;
         } else {
             msgDiv.className = "message incoming";
             msgDiv.innerHTML = `
                 <span class="sender-name">${data.sender}</span>
                 <p class="message-text">${data.text}</p>
+                <span class="message-time">${timeString}</span>
             `;
         }
         
-        // Append the new bubble into our screen container
         messageContainer.appendChild(msgDiv);
     });
 
-    // Auto-scroll to the absolute bottom so you always see the latest texts
     messageContainer.scrollTop = messageContainer.scrollHeight;
 });
