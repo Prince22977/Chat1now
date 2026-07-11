@@ -1,124 +1,282 @@
+/* --GLOBAL STYLES & VARIABLES-- */
+:root {
+    --bg-primary: #1a1a2e;
+    --bg-sidebar: #16162a;
+    --bg-chat: #0f0f1b;
+    --text-main: #ffffff;
+    --text-muted:#8585a8;
+    --accent: #6c5ce7;
+    --accent-hover:#5b4bc4;
+    --msg-outgoing:#6c5ce7;
+    --msg-incoming: #252542;
+}
+
 *{
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* Forces the app to perfectly fill the phone screen without scrolling the whole page */
 body {
-    background-color: #f0f2f5;
+    background-color: var(--bg-chat);
+    color: var(--text-main);
     height: 100vh;
-    display: flex;
-    justify-content: center;
+    overflow: hidden;
 }
 
-/* The chat containing our entire chat application layout */
-.chat-wrapper {
-    width: 100%;
-    max-width: 500px; /* Looks like phone frame on PC, but matches phone width on mobile */
-    height: 100%;
-    display: flex;
-    flex-direction: column; /* Stack header, messages and input veritcally like blocks */
-    background: #ffffff;
+/* -- MASTER CONTAINER LAYOUT -- */
+.app-container {
+    display: grid;
+    grid-template-columns: 300px 1fr; /* Sidebar is 300px, chat takes the rest */
+    height: 100vh;
+    width: 100vw;
 }
 
-/* 1. HEADER STYLING */
-.chat-header {
-    background: #6c5ce7;
-    color: white;
-    padding: 15px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.chat-header h3 { font-size: 18px; }
-.chat-header p { font-size: 12px; opacity: 0.8; }
-
-/* 2.MESSAGE CONTAINER STYLING */
-.message-container {
-    flex: 1; /* MAGIC LINE: Tells this zone to swallow up all remaining screen space */
-    overflow-y: auto; /* MAGIC LINE: If texts overflow the screen, add a scrollbar only here */
-    padding: 20px;
-    background: #e5ddd5; /* Classic chat backgroung color */
-    display: flex;
+/* -- CONTROL SIDEBAR -- */
+.sidebar {
+    background-color: var(--bg-sidebar);
+    border-right: 1px solid #252542;
+    display:flex;
     flex-direction: column;
-    gap: 12px; /* Puts a nice gap between chat bubbles */
+    padding: 20px;
+    z-index: 10;
+    transition: transform 0.3s ease;
 }
 
-/* chat Bubbles Base Layout */ 
-.message {
-    max-width: 75%;
-    padding: 10px 14px;
-    border-radius: 12px;
-    font-size: 15px;
-    line-height: 1.4;
+.sidebar-header {
+    margin-bottom: 20px;
 }
 
-/* Friend's messages (Incoming) - Left Aligned */
-.incoming {
-    background: #ffffff;
-    align-self: flex-start;
-    border-top-left-radius: 0; /* Makes the bubble look like a speech bubble */
+.sidebar-header h2 {
+    font-size: 1.4rem;
+    letter-spacing: 1px;
+    color: var(--text-main);
 }
 
-.sender-name {
-    display: block;
-    font-size: 11px;
+.user-badge {
+    font-size: 0.85rem;
+    color: var(--accent);
     font-weight: bold;
-    color: #6c5ce7;
-    margin-bottom: 3px;
+    display: inline-block;
+    margin-top: 5px;
 }
 
-/* Your Messages (Outgoing) - Right aligned */
-.outgoing {
-    background: #d9fdd3; /* Light green background for your messages just like whatsapp */
-    align-self: flex-end;
-    border-top-right-radius: 2px;
+/* User Search Box */
+.search-box {
+    position: relative;
+    margin-bottom: 25px;
 }
 
-/* 3. INPUT BAR STYLING */
-.chat-input-area {
-    padding: 12px;
-    background: #f0f2f5;
-}
-#chat-form {
-    display: flex;
-    gap: 10px;
-}
-#msg-input {
-    flex: 1;
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 20px; /* Rounded input bar */
-    outline: none;
-    font-size: 16px;
-}
-.send-btn {
-    background: #6c5ce7;
+.search-box input {
+    width: 100%;
+    padding: 10px 15px;
+    background-color: #252542;
+    border: 1px solid #3b3b5e;
+    border-radius: 8px;
     color: white;
-    border: none;
-    padding: 0 20px;
-    border-radius: 20px;
-    font-weight: bold;
+    outline: none;
+}
+
+.search-results {
+    position: absolute;
+    top: 45px;
+    left: 0;
+    width: 100%;
+    background-color: #252542;
+    border: 1px solid #3b3b5e;
+    border-radius: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 20;
+}
+
+.search-results div{
+    padding: 10px 15px;
     cursor: pointer;
 }
 
-/* Message Timestamp Styling */
-.message-time {
-    font-size: 0.7rem;
+.search-results div:hover {
+    background-color: var(--accent);
+}
+
+.hidden {
+    display: none;
+}
+
+/* Navigation Lists (Rooms & DMs) */
+.sidebar-section h3 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+}
+
+.room-list, .dm-list {
+    list-style: none;
+    margin-bottom: 25px;
+}
+
+.room-list, .dm-list li {
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+    transition: all 0.2s ease;
+}
+
+.room-item:hover, .dm-list li:hover, .room-item.active {
+    background-color: #252542;
+    color: var(--text-main);
+}
+
+.room-item.active {
+    border-left: 3px solid var(--accent);
+}
+
+/* -- MAIN CHAT AREA -- */
+.chat-area {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-chat);
+}
+
+.chat-header {
+    background-color: var(--bg-sidebar);
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #252542;
+}
+
+.menu-toggle {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.8rem;
+    cursor: pointer;
+    margin-right: 15px;
+    display: none; /* Hidden by desktop */
+}
+
+.chat-info h2 {
+    font-size: 1.2rem;
+}
+
+.chat-info p{
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* -- MESSAGES AREA -- */
+.message-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.message {
+    max-width: 65%;
+    padding: 12px 16px;
+    border-radius: 14px;
+    position: relative;
+    line-height: 1.4;
+    word-wrap: break-word;
+}
+
+.outgoing {
+    background-color: var(--msg-outgoing);
+    align-self: flex-end;
+    border-bottom-right-radius: 2px;
+}
+
+.incoming {
+    background-color: var(--msg-incoming);
+    align-self: flex-start;
+    border-bottom-left-radius: 2px;
+}
+
+.sender-name {
+    font-size: 0.75rem;
+    color: var(--accent);
+    font-weight: bold;
     display: block;
-    margin-top: 3px;
+    margin-bottom: 4px;
+}
+
+.message-time {
+    font-size: 0.65rem;
+    display: block;
+    margin-top: 5px;
+    text-align: right;
     opacity: 0.6;
 }
 
-/* Align yout own timestamp to the right side of the bubbles */
-.outgoing .message-time {
-    text-align: right;
-    color: #666; 
+/* -- FOOTER INPUT AREA -- */
+.input-area {
+    padding: 20px;
+    background-color: var(--bg-sidebar);
+    display: flex;
+    gap: 10px;
+    border-top: 1px solid #252542;
 }
 
-/* Align friend's timestamps to the left side */
-.incoming .message-time {
-    text-align: left;
-    color: #666;
+.input-area input {
+   flex: 1;
+   padding: 14px;
+   background-color: #252542;
+   border: 1px solid #3b3b5e;
+   border-radius: 8px;
+   color: white;
+   outline: none;
+   font-size: 1rem;
+}
+
+.input-area button {
+    padding: 0 25px;
+    background-color: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.input-area button:hover {
+    background-color: var(--accent-hover);
+}
+
+/* -- MOBILE RESPONSIVENESS -- */
+@media (max-width: 768px) {
+    .app-container {
+        grid-template-columns: 1fr; /* Single column layout */
+    }
+
+    .sidebar {
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100vh;
+        width: 280px;
+        transform: translateX(-100%); /*Hidex sidebar off the screen to the left side */
+    }
+
+    /* With use of "js" the class 'open', the sidebar and slides into view */
+    .sidebar.open {
+        transform: translateX(0)
+    }
+
+    .menu-toggle {
+        display: block; /* Hamburge icon shows in the mobile only*/
+    }
+
+    .message {
+        max-width: 85%; /* Give text more breathing room on small screens */
+    }
 }

@@ -1,89 +1,273 @@
-// 1. Import the Firebase tools we need from Google's servers
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+// 1. FIREBASE CONFIGURATION & IMPORTS
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { 
+    getFirestore, collection, addDoc, setDoc, getDoc, doc, 
+    query, where, orderBy, onSnapshot 
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// 2. Security Check: Make sure they actually picked a nickname first
-const currentUsername = localStorage.getItem('savedUsername');
-if (!currentUsername) {
-    window.location.href = 'index.html';
-}
-
-// 3. YOUR FIREBASE CONFIGURATION (Paste your real keys from your Firebase tab here!)
+// ⚠️ PASTE YOUR EXACT FIREBASE CONFIG BLOCKS HERE! ⚠️
 const firebaseConfig = {
     apiKey: "AIzaSyAI0dqurlrTM-aeWgc2kjtJNzkkaktu6Tg",
     authDomain: "cloud-chat-6417e.firebaseapp.com",
     projectId: "cloud-chat-6417e",
-    storageBucket: "cloud-chat-6417e.firebasestorage.app",
+    storageBucket:"cloud-chat-6417e.firebasestorage.app",
     messagingSenderId: "317091363884",
     appId: "1:317091363884:web:e38110aa7375eeaae46589"
 };
 
-// 4. Wake up Firebase and connect to the database
+// Initialize Firebase & Firestore
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const messagesCollection = collection(db, "messages");
 
-// 5. FIND OUR HTML ELEMENTS
-const chatForm = document.getElementById('chat-form');
-const msgInput = document.getElementById('msg-input');
-const messageContainer = document.getElementById('message-container');
+// 2. DOM ELEMENTS (Getting our HTML items)
+const messageContainer = document.getElementById("message-container");
+const messageForm = document.getElementById("message-form");
+const messageInput = document.getElementById("message-input");
+const myUsernameDisplay = document.getElementById("my-username-display");
+const currentRoomTitle = document.getElementById("current-room-title");
+const chatTypeSubtitle = document.getElementById("chat-type-subtitle");
+const userSearchInput = document.getElementById("user-search-input");
+const searchResults = document.getElementById("search-results");
+const activeDmList = document.getElementById("active-dm-list");
+const sidebar = document.getElementById("sidebar");
+const menuToggle = document.getElementById("menu-toggle");
+const roomItems = document.querySelectorAll(".room-item");
 
-// 6. SENDING MESSAGES: What happens when you hit the "Send" button?
-chatForm.addEventListener('submit', async (event) => {
-    event.preventDefault(); // Stop page from refreshing
-    
-    const messageText = msgInput.value.trim();
-    if (messageText === "") return;
+// 3. STATE VARIABLES (App settings while running)
+let currentUsername = localStorage.getItem("username");
+let currentRoom = "general"; // Default public room
+let activeUnsubscribe = null; // Keeps track of our live database listener
+
+// --- EXCLUSIVE USERNAME PROTECTION SYSTEM ---
+async function verifyAndRegisterUser() {
+    if (!currentUsername) {
+        window.location.href = "index.html";
+        return;
+    }
+
+    // Clean up username formatting
+    currentUsername = currentUsername.trim().toLowerCase();
+    myUsernameDisplay.textContent = `@${currentUsername}`;
+
+    let deviceId = localStorage.getItem("deviceId");
+    if (!deviceId) {
+        deviceId = "dev_" + Math.random().toString(36).substring(2, 15);
+        localStorage.setItem("deviceId", deviceId);
+    }
+
+    const userDocRef = doc(db, "users", currentUsername);
+    const userDocSnap = await getDoc(userDocRef);
+
+    if (userDocSnap.exists()) {
+        const existingData = userDocSnap.data();
+        // If the username exists, but the browser's deviceId doesn't match, block them!
+        if (existingData.deviceId !== deviceId) {
+            alert("❌ Username is already taken! Please go back and choose a different nickname.");
+            localStorage.removeItem("username");
+            window.location.href = "index.html";
+            return;
+        }
+    } else {
+        // If the username is totally new, register it to this device in the cloud!
+        await setDoc(userDocRef, {
+            username: currentUsername,
+            deviceId: deviceId,
+            lastActive: Date.now()
+        });
+    }
+
+    // Everything is safe! Start listening for messages.
+    listenForMessages();
+}
+
+// Execute the safety check immediately when the dashboard loads
+verifyAndRegisterUser();
+
+
+// 4. REAL-TIME MESSAGE STREAM ENGINE
+function listenForMessages() {
+    // If we are already listening to a room, turn it off before switching rooms
+    if (activeUnsubscribe) {
+        activeUnsubscribe();
+    }
+
+    const messagesCollection = collection(db, "messages");
+    const q = query(
+        messagesCollection, 
+        where("room", "==", currentRoom),
+        orderBy("timestamp", "asc")
+    );
+
+    // Start live tracking messages inside the current room
+    activeUnsubscribe = onSnapshot(q, (snapshot) => {
+        messageContainer.innerHTML = "";
+
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            const msgDiv = document.createElement("div");
+
+            // Timestamp cleaner formatting (e.g., "04:20 PM")
+            let timeString = "";
+            if (data.timestamp) {
+                const date = new Date(data.timestamp);
+                timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            }
+
+            if (data.sender === currentUsername) {
+                msgDiv.className = "message outgoing";
+                msgDiv.innerHTML = `
+                    <p class="message-text">${data.text}</p>
+                    <span class="message-time">${timeString}</span>
+                `;
+            } else {
+                msgDiv.className = "message incoming";
+                msgDiv.innerHTML = `
+                    <span class="sender-name">@${data.sender}</span>
+                    <p class="message-text">${data.text}</p>
+                    <span class="message-time">${timeString}</span>
+                `;
+            }
+            messageContainer.appendChild(msgDiv);
+        });
+
+        // Auto-scroll screen down to latest messages
+        messageContainer.scrollTop = messageContainer.scrollHeight;
+    }, (error) => {
+        console.error("Firestore Error:", error);
+    });
+}
+
+
+// 5. SENDING MESSAGES
+messageForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const textToSend = messageInput.value.trim();
+    if (!textToSend) return;
+
+    messageInput.value = ""; // Instantly clear input field for fluid typing
 
     try {
-        // Drop the message data straight into the cloud filing cabinet
-        await addDoc(messagesCollection, {
+        await addDoc(collection(db, "messages"), {
+            text: textToSend,
             sender: currentUsername,
-            text: messageText,
-            timestamp: Date.now() // Saves exact time so messages stay in order
+            room: currentRoom,
+            timestamp: Date.now()
         });
-        
-        msgInput.value = ""; // Clear the text box so you can type again
-    } catch (error) {
-        console.error("Error sending message: ", error);
+    } catch (err) {
+        console.error("Error sending message:", err);
     }
 });
 
-// 7. RECEIVING MESSAGES: Listen to the cloud database in real-time!
-const q = query(messagesCollection, orderBy("timestamp", "asc"));
-onSnapshot(q, (snapshot) => {
-    messageContainer.innerHTML = ""; 
 
-    snapshot.forEach((doc) => {
-        const data = doc.data();
-        const msgDiv = document.createElement('div');
-        
-        // --- NEW TIME FORMATTING LOGIC ---
-        // Converts the long database number into a clean "11:35 PM" format
-        let timeString = "";
-        if (data.timestamp) {
-            const date = new Date(data.timestamp);
-            timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        }
-        // ---------------------------------
+// 6. REAL-TIME USER SEARCH SEARCH BAR (For DMs)
+userSearchInput.addEventListener("input", (e) => {
+    const searchVal = e.target.value.trim().toLowerCase();
+    
+    if (!searchVal) {
+        searchResults.classList.add("hidden");
+        return;
+    }
 
-        if (data.sender === currentUsername) {
-            msgDiv.className = "message outgoing";
-            msgDiv.innerHTML = `
-                <p class="message-text">${data.text}</p>
-                <span class="message-time">${timeString}</span>
-            `;
+    // Query Firestore to find usernames starting with the input value
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("username", ">=", searchVal), where("username", "<=", searchVal + "\uf8ff"));
+
+    onSnapshot(q, (snapshot) => {
+        searchResults.innerHTML = "";
+        let count = 0;
+
+        snapshot.forEach((doc) => {
+            const user = doc.data();
+            // Don't show your own name in the search results
+            if (user.username !== currentUsername) {
+                count++;
+                const div = document.createElement("div");
+                div.textContent = `💬 @${user.username}`;
+                div.addEventListener("click", () => startPrivateDM(user.username));
+                searchResults.appendChild(div);
+            }
+        });
+
+        if (count > 0) {
+            searchResults.classList.remove("hidden");
         } else {
-            msgDiv.className = "message incoming";
-            msgDiv.innerHTML = `
-                <span class="sender-name">${data.sender}</span>
-                <p class="message-text">${data.text}</p>
-                <span class="message-time">${timeString}</span>
-            `;
+            searchResults.classList.add("hidden");
         }
-        
-        messageContainer.appendChild(msgDiv);
     });
+});
 
-    messageContainer.scrollTop = messageContainer.scrollHeight;
+
+// 7. PRIVATE DM CREATION LOGIC (Deterministic Room IDs)
+function startPrivateDM(targetUser) {
+    searchResults.classList.add("hidden");
+    userSearchInput.value = "";
+
+    // The Alphabetical formula (Always generates the exact same room ID string for both users)
+    const dmRoomId = currentUsername < targetUser 
+        ? `dm_${currentUsername}_${targetUser}` 
+        : `dm_${targetUser}_${currentUsername}`;
+
+    currentRoom = dmRoomId;
+    currentRoomTitle.textContent = `🔒 Chat with @${targetUser}`;
+    chatTypeSubtitle.textContent = "Private Direct Message";
+
+    // De-activate all public room visual highlights
+    roomItems.forEach(i => i.classList.remove("active"));
+
+    // Add target friend to the active DM side-list if they aren't already pinned there
+    if (!document.getElementById(`dm-sidebar-${targetUser}`)) {
+        const li = document.createElement("li");
+        li.id = `dm-sidebar-${targetUser}`;
+        li.textContent = `👤 @${targetUser}`;
+        li.addEventListener("click", () => {
+            currentRoom = dmRoomId;
+            currentRoomTitle.textContent = `🔒 Chat with @${targetUser}`;
+            chatTypeSubtitle.textContent = "Private Direct Message";
+            document.querySelectorAll(".sidebar li").forEach(i => i.classList.remove("active"));
+            li.classList.add("active");
+            listenForMessages();
+        });
+        activeDmList.appendChild(li);
+    }
+
+    // Set this DM as visually active
+    document.querySelectorAll(".sidebar li").forEach(i => i.classList.remove("active"));
+    document.getElementById(`dm-sidebar-${targetUser}`).classList.add("active");
+
+    // Close sidebar overlay automatically if user is browsing on phone
+    sidebar.classList.remove("open");
+
+    // Pull messages from the private cloud room
+    listenForMessages();
+}
+
+
+// 8. SIDEBAR PUBLIC CHANNELS CLICKS SWITCHING
+roomItems.forEach((item) => {
+    item.addEventListener("click", () => {
+        // Clear old highlights, select current item
+        document.querySelectorAll(".sidebar li").forEach(i => i.classList.remove("active"));
+        item.classList.add("active");
+
+        const roomSelected = item.getAttribute("data-room");
+        currentRoom = roomSelected;
+        currentRoomTitle.textContent = `# ${roomSelected}`;
+        chatTypeSubtitle.textContent = "Public Global Room";
+
+        sidebar.classList.remove("open"); // Mobile auto-close drawer
+        listenForMessages();
+    });
+});
+
+
+// 9. MOBILE MENU HAMBURGER DRAWER SWAP
+menuToggle.addEventListener("click", () => {
+    sidebar.classList.toggle("open");
+});
+
+// Close search menu dropdown if user clicks anywhere outside of it
+document.addEventListener("click", (e) => {
+    if (!e.target.closest(".search-box")) {
+        searchResults.classList.add("hidden");
+    }
 });

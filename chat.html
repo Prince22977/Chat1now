@@ -3,33 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Room</title>
+    <title>Chat1now</title>
     <link rel="stylesheet" href="chat.css">
 </head>
 <body>
-    <div class="chat-wrapper">
-        <header class="chat-header">
-            <div class="room-info">
-                <h3>The Squad</h3>
-                <p>for friends online</p>
+    <div class="app-container">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2>⚡Squad-chat💬</h2>
+                <span class="user-badge" id="my-username-display">@username</span>
             </div>
-        </header>
+
+            <div class="search-box">
+                <input type="text" id="user-search-input" placeholder="🔍Search for Friends">
+                <div id="search-results" class="search-results hidden"></div>
+            </div>
+
+            <div class ="sidebar-section">
+                <h3>Public Rooms</h3>
+                <ul class="room-list">
+                    <li class="room-item active" data-room="general">#general-chat</li>
+                    <li class="room-item" data-room="gaming">#gaming</li>
+                </ul>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>Direct Messages</h3>
+                <ul class="dm-list" id="active-dm-list"></ul>
+            </div>
+        </aside>
         
-       <main class="message-container" id="message-container">
-            </main>
+        <main class="chat-area">
+            <header class="chat-header">
+                <button class="menu-toggle" id="menu-toggle">☰</button>
+                <div class="chat-info">
+                    <h2 id="current-room-title">#general-chat</h2>
+                    <p id="chat-type-subtitle">Public Room</p>
+                </div>
+            </header>
 
-        <footer class="chat-input-area">
-            <form id="chat-form">
-                <input type="text" placeholder="Type a message..." id="msg-input" required autocomplete="off">
-                <button type="submit" class="send-btn">Send</button>
+            <div class="message-container" id="message-container"></div>
+
+            <form class="input-area" id="message-form">
+                <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off" required>
+                <button type="submit" id="send-button">send</button>
             </form>
-        </footer>
+        </main>
     </div>
 
-    <script type="module" src="chat.js"></script>
-</body>
-</html>
-    </div>
     <script type="module" src="chat.js"></script>
 </body>
 </html>
