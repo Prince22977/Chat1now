@@ -1,8 +1,8 @@
 // 1. FIREBASE CONFIGURATION & IMPORTS
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { 
-    getFirestore, collection, addDoc, setDoc, getDoc, doc, 
-    query, where, orderBy, onSnapshot 
+    getFirestore, collection, addDoc, setDoc, getDoc, doc, updateDoc,
+    query, where, orderBy, onSnapshot, arrayUnion, arrayRemove
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // ⚠️ PASTE YOUR EXACT FIREBASE CONFIG BLOCKS HERE! ⚠️
@@ -32,6 +32,7 @@ const activeDmList = document.getElementById("active-dm-list");
 const sidebar = document.getElementById("sidebar");
 const menuToggle = document.getElementById("menu-toggle");
 const roomItems = document.querySelectorAll(".room-item");
+const muteBtn = document.getElementById('mute-btn');
 
 // 3. STATE VARIABLES (App settings while running)
 let currentUsername = localStorage.getItem("username");
@@ -77,7 +78,7 @@ async function verifyAndRegisterUser() {
     }
 
     // Everything is safe! Start listening for messages.
-    listenForMessages();
+    checkIfRoomIsMuted(currentRoom);
 }
 
 // Execute the safety check immediately when the dashboard loads
@@ -225,7 +226,7 @@ function startPrivateDM(targetUser) {
             chatTypeSubtitle.textContent = "Private Direct Message";
             document.querySelectorAll(".sidebar li").forEach(i => i.classList.remove("active"));
             li.classList.add("active");
-            listenForMessages();
+            checkIfRoomIsMuted(currentRoom);
         });
         activeDmList.appendChild(li);
     }
@@ -238,7 +239,7 @@ function startPrivateDM(targetUser) {
     sidebar.classList.remove("open");
 
     // Pull messages from the private cloud room
-    listenForMessages();
+    checkIfRoomIsMuted(currentRoom);
 }
 
 
@@ -271,3 +272,64 @@ document.addEventListener("click", (e) => {
         searchResults.classList.add("hidden");
     }
 });
+
+// it's the UI for mute button
+muteBtn.addEventListener('click', async () => {
+    // Check what the current icon is
+    const isCurrentlyMuted = muteBtn.innerText === '🔕';
+
+    if (isCurrentlyMuted) {
+        // UNMUTE: Change back to bell
+        muteBtn.innerText = '🔔';
+        muteBtn.title = 'Mute Room';
+        await updateMuteStatusInDatabase(false);
+    } else {
+        //MUTE: Change to silenced bell
+        muteBtn.innerText = '🔕';
+        muteBtn.title = 'Unmute Room';
+        await updateMuteStatusInDatabase(true);
+    }
+});
+
+async function updateMuteStatusInDatabase(isMuting) {
+    try {
+        // v10 Syntax to target the specific user
+        const userRef = doc(db, 'users', currentUsername);
+
+        if (isMuting) {
+            await updateDoc(userRef, {
+                mutedRooms: arrayUnion(currentRoom)
+            });
+            console.log(`Muted room: ${currentRoom}`);
+        } else {
+            await updateDoc(userRef, {
+                mutedRooms: arrayRemove(currentRoom)
+            });
+            console.log(`Unmuted room: ${currentRoom}`);
+        } 
+    } catch (error) {
+        console.error("Error updating mute status: ", error);
+        muteBtn.innerText = isMuting ? '🔔' : '🔕'; // Revert if it fails
+    }
+}
+
+async function checkIfRoomIsMuted(roomId) {
+    try {
+        const userRef = doc(db, 'users', currentUsername);
+        const userDoc = await getDoc(userRef);
+
+        if (userDoc.exists()) {
+            const userData = userDoc.data();
+            // Check if the array exists and includes the room
+            if (userData.mutedRooms && userData.mutedRooms.includes(roomId)) {
+                muteBtn.innerText = '🔕';
+                muteBtn.title = 'Unmute Room';
+            } else {
+                muteBtn.innerText = '🔔';
+                muteBtn.title = 'Mute Room';
+            }
+        }
+    } catch (error) {
+        console.error("Error checking mute status:", error);
+    }
+}
