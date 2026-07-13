@@ -348,7 +348,7 @@ async function setupPushNotifications() {
 
         // 2. Pass that specific registration into getToken so Firebase doesn't get confused
         const currentToken = await getToken(messaging, {
-            vapidKey: "YOUR_VAPID_KEY_HERE", // Keep your existing vapid key here
+            vapidKey: "BGbayWoGhe_Ki7pJzVHwOOGtryyP8rr_lihplX1eEgtnVuCnuNkXsAQYT7zmDgZ6tf1RnDPFnWTKEu8ztZfX2DQ",
             serviceWorkerRegistration: registration // 🔥 THIS is the magic line that fixes your error
         });
 
