@@ -342,28 +342,25 @@ async function checkIfRoomIsMuted(roomId) {
 
 async function setupPushNotifications() {
     try {
-        // 1. Request permission from the user
-        const permission = await Notification.requestPermission();
-        if (permission !== 'granted') {
-        return;
-        }
+        // 1. Manually register the service worker first!
+        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+        console.log("Service Worker registered successfully!");
 
-        // 2. Get the unique device token from Firenase cosnole!
-        const token = await getToken(messaging);
+        // 2. Pass that specific registration into getToken so Firebase doesn't get confused
+        const currentToken = await getToken(messaging, {
+            vapidKey: "YOUR_VAPID_KEY_HERE", // Keep your existing vapid key here
+            serviceWorkerRegistration: registration // 🔥 THIS is the magic line that fixes your error
+        });
 
-        if (token) {
-            console.log ("FCM Device Token Generated:", token);
-
-            // 3. Save this token directly into the user's Firestore document
-            const userRef = doc(db, 'users', currentUsername);
-            await updateDoc(userRef, {
-                fcmToken: token
-            });
+        if (currentToken) {
+            console.log("We got the token, bro!", currentToken);
+            // (Keep whatever code you already had here to save the token to Firestore)
         } else {
-        console.log('No registration token available. Request permission to generate one.');
+            console.log("No registration token available.");
         }
+
     } catch (error) {
-        console.error('An error occured while setting up notifications:', error);
+        console.error("An error occurred while setting up notifications: ", error);
     }
 }
 // Listen for messages while the app is actively OPEN in the foreground

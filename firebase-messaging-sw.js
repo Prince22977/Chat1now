@@ -27,5 +27,5 @@ messaging.onBackgroundMessage((payload) => {
     };
 
     // Show the native notification popup on the phone/PC screen
-    self.registration.showNotification(notificationTitle, notoficationOptions);
+    self.registration.showNotification(notificationTitle, notificationOptions);
 });
