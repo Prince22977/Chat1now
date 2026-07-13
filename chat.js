@@ -2,10 +2,13 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { 
     getFirestore, collection, addDoc, setDoc, getDoc, doc, updateDoc,
-    query, where, orderBy, onSnapshot, arrayUnion, arrayRemove
+    query, where, orderBy, onSnapshot, arrayUnion, arrayRemove 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// ⚠️ PASTE YOUR EXACT FIREBASE CONFIG BLOCKS HERE! ⚠️
+// This import is here for push notifications!
+import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging.js";
+
+// My EXACT FIREBASE CONFIG BLOCKS ARE HERE!
 const firebaseConfig = {
     apiKey: "AIzaSyAI0dqurlrTM-aeWgc2kjtJNzkkaktu6Tg",
     authDomain: "cloud-chat-6417e.firebaseapp.com",
@@ -18,8 +21,9 @@ const firebaseConfig = {
 // Initialize Firebase & Firestore
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const messaging = getMessaging(app);
 
-// 2. DOM ELEMENTS (Getting our HTML items)
+// 2. DOM ELEMENTS (Getting HTML items)
 const messageContainer = document.getElementById("message-container");
 const messageForm = document.getElementById("message-form");
 const messageInput = document.getElementById("message-input");
@@ -84,6 +88,8 @@ async function verifyAndRegisterUser() {
 // Execute the safety check immediately when the dashboard loads
 verifyAndRegisterUser();
 
+// Trigger the notification setup right after the user successfully passes safety checks
+setupPushNotifications();
 
 // 4. REAL-TIME MESSAGE STREAM ENGINE
 function listenForMessages() {
@@ -333,3 +339,35 @@ async function checkIfRoomIsMuted(roomId) {
         console.error("Error checking mute status:", error);
     }
 }
+
+async function setupPushNotifications() {
+    try {
+        // 1. Request permission from the user
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+        return;
+        }
+
+        // 2. Get the unique device token from Firenase cosnole!
+        const token = await getToken(messaging);
+
+        if (token) {
+            console.log ("FCM Device Token Generated:", token);
+
+            // 3. Save this token directly into the user's Firestore document
+            const userRef = doc(db, 'users', currentUsername);
+            await updateDoc(userRef, {
+                fcmToken: token
+            });
+        } else {
+        console.log('No registration token available. Request permission to generate one.');
+        }
+    } catch (error) {
+        console.error('An error occured while setting up notifications:', error);
+    }
+}
+// Listen for messages while the app is actively OPEN in the foreground
+onMessage(messaging, (payload)=> {
+    console.log('Forground message received:', payload);
+    // You can choose to skip showing a banner popup if they are already looking at the chat!
+})
