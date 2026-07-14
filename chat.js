@@ -233,6 +233,7 @@ function startPrivateDM(targetUser) {
             document.querySelectorAll(".sidebar li").forEach(i => i.classList.remove("active"));
             li.classList.add("active");
             checkIfRoomIsMuted(currentRoom);
+            listenForMessages();
         });
         activeDmList.appendChild(li);
     }
@@ -246,6 +247,7 @@ function startPrivateDM(targetUser) {
 
     // Pull messages from the private cloud room
     checkIfRoomIsMuted(currentRoom);
+    listenForMessages();
 }
 
 
